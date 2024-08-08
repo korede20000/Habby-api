@@ -36,17 +36,18 @@ exports.getRestaurant = async (req, res)=>{
     }
 }
 
-exports.deleteRestaurant = async(req, res)=>{
+exports.deleteRestaurant = async (req, res) => {
     try {
-        const restaurant = await Restaurant.findByIdAndDelete(req.params.id)
+        const restaurant = await Restaurant.findByIdAndDelete(req.params.id);
         if (!restaurant) {
-            res.json("no restaurant found")
+            return res.status(404).json({ message: "Restaurant not found" });
         }
-        res.json(restaurant)
+        res.status(200).json({ message: "Restaurant deleted successfully", restaurant });
     } catch (error) {
-        res.json({message: error.message}); 
+        res.status(500).json({ message: error.message });
     }
-}
+};
+
 
 
 

@@ -14,5 +14,6 @@ const upload = multer({storage: storage})
 
 router.post("/", upload.single("img"), restaurantController.CreateRestaurant)
 router.get("/", restaurantController.getRestaurant)
+router.delete("/:id", restaurantController.deleteRestaurant)
 
 module.exports = router

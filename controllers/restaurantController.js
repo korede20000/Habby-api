@@ -36,6 +36,8 @@ exports.getRestaurant = async (req, res)=>{
     }
 }
 
+
+
 // exports.updateLocation = async (req, res) => {
 //     const {id} = req.params;
 //     const {latitude, longitude} = req.body;

@@ -26,10 +26,10 @@ const restaurantSchema = Joi.object({
             hours: Joi.string().required()
         })
     ).required(),
-    // location: Joi.object({
-    //     lat: Joi.number().required(),
-    //     lng: Joi.number().required()
-    // }).required()
+    location: Joi.object({
+        lat: Joi.number().required(),
+        lng: Joi.number().required()
+    }).required()
 });
 
 const menuItemSchema = Joi.object({

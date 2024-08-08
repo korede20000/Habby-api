@@ -20,16 +20,16 @@ const restaurantSchema = Joi.object({
     name: Joi.string().required(),
     img: Joi.string(),
     rating: Joi.number().required(),
-    operatingHours: Joi.array().items(
-        Joi.object({
-            day: Joi.string().required(),
-            hours: Joi.string().required()
-        })
-    ).required(),
-    location: Joi.object({
-        lat: Joi.number().required(),
-        lng: Joi.number().required()
-    }).required()
+    // operatingHours: Joi.array().items(
+    //     Joi.object({
+    //         day: Joi.string().required(),
+    //         hours: Joi.string().required()
+    //     })
+    // ).required(),
+    // location: Joi.object({
+    //     lat: Joi.number().required(),
+    //     lng: Joi.number().required()
+    // }).required()
 });
 
 const menuItemSchema = Joi.object({

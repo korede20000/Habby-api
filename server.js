@@ -16,7 +16,7 @@ const app = express()
 
     
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: "https://habby-frontend.vercel.app",
     allowedHeaders: ["Content-Type", "Authorization", "auth-token"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true

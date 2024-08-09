@@ -3,8 +3,7 @@ const Joi = require("joi")
 const validator = (schema) => (payload) => schema.validate(payload)
 
 const categorySchema = Joi.object({
-    name: Joi.string().required(),
-    description: Joi.string()
+    name: Joi.string().required()
 })
 
 const menuSchema = Joi.object({

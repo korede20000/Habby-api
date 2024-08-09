@@ -9,8 +9,7 @@ exports.createCategory = async (req, res)=>{
         }
 
         const category = new Category({
-            name: req.body.name, 
-            description: req.body.description
+            name: req.body.name
         })
 
         const categoryItem = await category.save()

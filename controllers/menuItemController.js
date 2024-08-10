@@ -12,7 +12,7 @@ exports.CreateMenuItem = async (req, res)=> {
                     name: req.body.name,
                     description: req.body.description,  
                     price: req.body.price,
-                    img:req.file.path,
+                    img: req.file.path,
                     restaurant: req.body.restaurant
                 })
         
@@ -55,14 +55,15 @@ exports.getAllMenuItem = async (req, res) => {
     }
 }
 
-exports.removeMenuItem = async (req, res)=>{
+exports.removeMenuItem = async (req, res) => {
     try {
-        const menuItem = await MenuItem.findByIdAndDelete(req.params.id)
+        const menuItem = await MenuItem.findByIdAndDelete(req.params.id);
         if (!menuItem) {
-            res.json("no menuItem found")
+            return res.json("No menu item found");
         }
+        res.json({ message: "Menu item deleted successfully" });
     } catch (error) {
-        res.json({message: error.message})
+        res.json({ message: error.message });
     }
-}
+};
 

@@ -37,7 +37,7 @@ exports.getMenuItem = async (req, res)=>{
     }
 }
 
-exports.getMenuItem = async (req, res) => {
+exports.getMenuItemByRestaurant = async (req, res) => {
     try {
         const menuItems = await MenuItem.find({restaurant: req.params.restaurantId})
         res.json(menuItems)
@@ -59,20 +59,10 @@ exports.removeMenuItem = async (req, res)=>{
     try {
         const menuItem = await MenuItem.findByIdAndDelete(req.params.id)
         if (!menuItem) {
-            return res.json("no menuItem found")
+            res.json("no menuItem found")
         }
     } catch (error) {
         res.json({message: error.message})
     }
 }
-
-// exports.getMenuItemByRestaurant = async (req, res) => {
-//     try {
-//         const {restaurantId} = req.params
-//         const menuItems = await MenuItem.find({restaurantId})
-//         res.json(menuItems)
-//     } catch (error) {
-//         res.json({message: error.message})
-//     }
-// }
 

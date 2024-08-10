@@ -17,10 +17,10 @@ const router = express.Router()
 
 router.post("/", auth, admin, upload.single("img"), menuItemController.CreateMenuItem)
 router.get("/", menuItemController.getMenuItem)
-router.get('/:restaurantId', menuItemController.getMenuItem)
+router.get('/:restaurantId', menuItemController.getMenuItemByRestaurant)
 router.get("/", menuItemController.getAllMenuItem)
 router.delete("/:id", menuItemController.removeMenuItem)
-// router.get('/:restaurantId', menuItemController.getMenuItemByRestaurant)
+
 
 
 module.exports = router

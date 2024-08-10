@@ -19,7 +19,8 @@ router.post("/", auth, admin, upload.single("img"), menuItemController.CreateMen
 router.get("/", menuItemController.getMenuItem)
 router.get('/:restaurantId', menuItemController.getMenuItem)
 router.get("/", menuItemController.getAllMenuItem)
-router.get('/:restaurantId', menuItemController.getMenuItemByRestaurant)
+router.delete("/", menuItemController.removeMenuItem)
+// router.get('/:restaurantId', menuItemController.getMenuItemByRestaurant)
 
 
 module.exports = router

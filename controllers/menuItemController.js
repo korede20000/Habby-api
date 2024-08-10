@@ -48,19 +48,31 @@ exports.getMenuItem = async (req, res) => {
 
 exports.getAllMenuItem = async (req, res) => {
     try {
-        const menuItems = MenuItem.find()
+        const menuItems = await MenuItem.find()
         res.json(menuItems)
     } catch (error) {
         res.json({message: error.message})
     }
 }
 
-exports.getMenuItemByRestaurant = async (req, res) => {
+exports.removeMenuItem = async (req, res)=>{
     try {
-        const {restaurantId} = req.params
-        const menuItems = await MenuItem.find({restaurantId})
-        res.json(menuItems)
+        const menuItem = await MenuItem.findByIdAndDelete(req.params.id)
+        if (!menuItem) {
+            return res.json("no menuItem found")
+        }
     } catch (error) {
         res.json({message: error.message})
     }
 }
+
+// exports.getMenuItemByRestaurant = async (req, res) => {
+//     try {
+//         const {restaurantId} = req.params
+//         const menuItems = await MenuItem.find({restaurantId})
+//         res.json(menuItems)
+//     } catch (error) {
+//         res.json({message: error.message})
+//     }
+// }
+

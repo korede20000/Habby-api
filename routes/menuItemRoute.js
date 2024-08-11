@@ -16,7 +16,7 @@ const upload = multer({storage: storage})
 const router = express.Router()
 
 router.post("/", auth, admin, upload.single("img"), menuItemController.CreateMenuItem)
-router.get("/", menuItemController.getSingleMenuItem)
+router.get("/:id", menuItemController.getSingleMenuItem)
 router.get('/:restaurantId', menuItemController.getMenuItemByRestaurant)
 router.get("/", menuItemController.getAllMenuItem)
 router.delete("/:id", menuItemController.removeMenuItem)

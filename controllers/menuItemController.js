@@ -27,11 +27,11 @@ exports.CreateMenuItem = async (req, res)=> {
         }
 }
 
-exports.getMenuItem = async (req, res)=>{
+exports.getSingleMenuItem = async (req, res)=>{
     try {
-        const menuItem = await MenuItem.find()
+        const menuItem = await MenuItem.find(req.params.id)
         res.json(menuItem)
-        
+         
     } catch (error) {
         res.json({message: error.message}); 
     }

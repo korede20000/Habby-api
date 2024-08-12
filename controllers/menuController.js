@@ -8,10 +8,8 @@ exports.createMenu = async (req,res)=>{
         }else{
             try {
                 const menu = new Menu({
-                    category: req.body.category,
                     name: req.body.name,
                     img: req.file.path,  
-                    price: req.body.price,
                     africanDelight: req.body.africanDelight,
                     westernCuisine: req.body.westernCuisine
                 })

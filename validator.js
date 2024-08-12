@@ -7,10 +7,8 @@ const categorySchema = Joi.object({
 })
 
 const menuSchema = Joi.object({
-    category: Joi.string().required(),
     name: Joi.string().required(),
     img: Joi.string(),
-    price: Joi.number().required(),
     africanDelight: Joi.boolean(),
     westernCuisine: Joi.boolean()
 })

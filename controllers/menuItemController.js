@@ -29,8 +29,11 @@ exports.CreateMenuItem = async (req, res)=> {
 
 exports.getSingleMenuItem = async (req, res)=>{
     try {
-        const menuItem = await MenuItem.find(req.params.id)
+        const menuItem = await MenuItem.findById(req.params.id)
         res.json(menuItem)
+        if (!menuItem) {
+            res.json("No menuItem found")
+        }
          
     } catch (error) {
         res.json({message: error.message}); 

@@ -36,6 +36,8 @@ exports.getRestaurant = async (req, res)=>{
     }
 }
 
+
+
 exports.deleteRestaurant = async (req, res) => {
     try {
         const restaurant = await Restaurant.findByIdAndDelete(req.params.id);

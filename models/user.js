@@ -13,15 +13,16 @@ const userSchema = new mongoose.Schema({
         city: String,
     }],
     role: {type: String, enum: ["admin", "client"], default: "client"},
-})
+    isVerified: { type: Boolean, default: false }, // New field
+    verificationToken: { type: String }, // New field
+});
 
-userSchema.methods.generateAuthToken = function(){
+userSchema.methods.generateAuthToken = function() {
     const token = jwt.sign(
-        { id: this._id, role: this.role},
+        { id: this._id, role: this.role },
         process.env.JWT_SECRET_KEY
     );
-
-    return token
+    return token;
 };
 
 module.exports = mongoose.model("User", userSchema)

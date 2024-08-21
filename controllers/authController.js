@@ -1,66 +1,117 @@
 const User = require("../models/user")
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcryptjs")
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 
 
-//Password Validation Function
-const validatePassword = (password)=>{
-    const pass = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/
-    return pass.test(password)
+exports.register = async (req, res) => {
+    const { firstName, lastName, email, phone, password, confirmPassword, addresses, role } = req.body;
 
-}
-
-exports.register = async(req, res)=>{
-    const {firstName, lastName, email, phone, password, confirmPassword, addresses, role} = req.body
-
-    //check if password match
-    if(password !== confirmPassword) { 
-        return res.json("Password do not match")
+    // Check if passwords match
+    if (password !== confirmPassword) {  
+        return res.json("Passwords do not match");
     }
 
-    //Validate Password
+    // Validate Password
     if (!validatePassword(password)) {
-        return res.json("Password must contain atleast 8 characters long and must contain one number and one alphabet")
+        return res.json("Password must be at least 8 characters long and contain one number and one alphabet");
     }
 
     try {
-        //check if user already exists
-        let user = await User.findOne({email})
+        // Check if user already exists
+        let user = await User.findOne({ email });
         if (user) {
-            res.json("User Already Exist")
+            return res.json("User already exists");
         }
 
-        user = new User({firstName, lastName, email, phone, password, addresses, role})
-        const salt = await bcrypt.genSalt(10)
-        user.password = await bcrypt.hash(user.password, salt)
-        await user.save()
+        // Create verification token
+        const verificationToken = crypto.randomBytes(32).toString("hex");
 
-        const token = user.generateAuthToken()
-        res.header("auth-token", token).json(user)
+        user = new User({
+            firstName,
+            lastName,
+            email,
+            phone,
+            password,
+            addresses,
+            role,
+            verificationToken
+        });
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
+        await user.save();
+
+        // Send verification email
+        const transporter = nodemailer.createTransport({
+            service: 'Gmail',
+            auth: {
+                user: process.env.EMAIL, // your email
+                pass: process.env.EMAIL_PASSWORD // your email password
+            }
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL,
+            to: user.email,
+            subject: 'Verify your email address',
+            text: `Please verify your email by clicking the following link: ${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                return res.json({ message: "Error sending verification email" });
+            }
+            res.json({ message: "Registration successful, please check your email for verification link" });
+        });
     } catch (error) {
-        res.json({message: error.message})
+        res.json({ message: error.message });
     }
-}
+};
 
-exports.login = async(req, res)=>{
-    const {email, password} = req.body
+exports.verifyEmail = async (req, res) => {
+    const { token } = req.query;
+
     try {
-        const user = await User.findOne({email})
+        const user = await User.findOne({ verificationToken: token });
         if (!user) {
-            return res.json("Invalid Email/Password")
+            return res.json("Invalid or expired token");
         }
 
-        const validPassword = await bcrypt.compare(password, user.password)
-        if (!validPassword) {
-            return res.json("Invalid Email/Password")
-        }
+        user.isVerified = true;
+        user.verificationToken = undefined;
+        await user.save();
 
-        const token = user.generateAuthToken()
-        res.json({token})
+        res.json("Email verified successfully");
     } catch (error) {
-        res.json({message: error.message})
+        res.json({ message: error.message });
     }
-} 
+};
+
+exports.login = async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.json("Invalid Email/Password");
+        }
+
+        if (!user.isVerified) {
+            return res.json("Please verify your email before logging in.");
+        }
+
+        const validPassword = await bcrypt.compare(password, user.password);
+        if (!validPassword) {
+            return res.json("Invalid Email/Password");
+        }
+
+        const token = user.generateAuthToken();
+        res.json({ token });
+    } catch (error) {
+        res.json({ message: error.message });
+    }
+};
 
 
 exports.getUser = async(req, res) =>{

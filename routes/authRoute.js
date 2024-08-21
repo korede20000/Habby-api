@@ -8,5 +8,6 @@ router.post("/register", authController.register)
 router.post("/login", authController.login)
 router.get("/user", auth, authController.getUser)
 router.put("/profile", auth, authController.updateUserProfile)
+router.get('/verify-email/:token', authController.verifyEmail);
 
 module.exports = router

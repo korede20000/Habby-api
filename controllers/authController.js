@@ -1,23 +1,17 @@
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const nodemailer = require("nodemailer");
+const crypto = require("crypto");
+const nodemailer = require("nodemailer"); // For sending emails
 
-//Password Validation Function
+// Password Validation Function
 const validatePassword = (password) => {
     const pass = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
     return pass.test(password);
 };
 
-// Setup Nodemailer transporter (Gmail example, adjust accordingly)
-const transporter = nodemailer.createTransport({
-    service: 'outlook',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
 
+// Register with Email Verification
 exports.register = async (req, res) => {
     const { firstName, lastName, email, phone, password, confirmPassword, addresses, role } = req.body;
 
@@ -28,7 +22,7 @@ exports.register = async (req, res) => {
 
     // Validate Password
     if (!validatePassword(password)) {
-        return res.json("Password must be at least 8 characters long and contain at least one number and one alphabet");
+        return res.json("Password must be at least 8 characters long and contain one number and one alphabet");
     }
 
     try {
@@ -38,7 +32,9 @@ exports.register = async (req, res) => {
             return res.json("User already exists");
         }
 
-        // Create a new user with "pending" status
+        // Create verification token
+        const verificationToken = crypto.randomBytes(32).toString("hex");
+
         user = new User({
             firstName,
             lastName,
@@ -47,58 +43,62 @@ exports.register = async (req, res) => {
             password,
             addresses,
             role,
-            status: "pending"
+            verificationToken
         });
 
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);
-
-        // Generate verification token
-        const verificationToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-        // Send verification email
-        const verificationLink = `http://habby-api.onrender.com/verify-email?token=${verificationToken}`;
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Email Verification',
-            html: `<p>Click <a href="${verificationLink}">here</a> to verify your email and activate your account.</p>`
-        };
-
-        await transporter.sendMail(mailOptions);
-
         await user.save();
 
-        res.json("A verification email has been sent to your email address. Please verify your email to activate your account.");
+        // Send verification email
+        const transporter = nodemailer.createTransport({
+            service: 'outlook',
+            auth: {
+                user: process.env.EMAIL_USER, // your email
+                pass: process.env.EMAIL_PASS // your email password
+            }
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: user.email,
+            subject: 'Verify your email address',
+            text: `Please verify your email by clicking the following link: http://habby-api.onrender.com/verify-email?token=${verificationToken}`
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                return res.json({ message: "Error sending verification email" });
+            }
+            res.json({ message: "Registration successful, please check your email for verification link" });
+        });
+    } catch (error) {
+        res.json({ message: error.message });
+    }
+};
+
+// Email Verification
+exports.verifyEmail = async (req, res) => {
+    const { token } = req.query;
+
+    try {
+        const user = await User.findOne({ verificationToken: token });
+        if (!user) {
+            return res.json("Invalid or expired token");
+        }
+
+        user.isVerified = true;
+        user.verificationToken = undefined;
+        await user.save();
+
+        res.json("Email verified successfully");
     } catch (error) {
         res.json({ message: error.message });
     }
 };
 
 
-exports.verifyEmail = async (req, res) => {
-    const { token } = req.query;
-
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const userId = decoded.id;
-
-        // Find user by ID and activate the account
-        let user = await User.findById(userId);
-        if (!user || user.status !== "pending") {
-            return res.json("Invalid or expired token");
-        }
-
-        user.status = "active";
-        await user.save();
-
-        res.json("Your email has been verified. Your account is now active.");
-    } catch (error) {
-        res.json({ message: "Invalid or expired token" });
-    }
-};
-
-
+// Login
 exports.login = async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -108,7 +108,7 @@ exports.login = async (req, res) => {
         }
 
         if (!user.isVerified) {
-            return res.json("Email Not Verified");
+            return res.json("Please verify your email before logging in.");
         }
 
         const validPassword = await bcrypt.compare(password, user.password);
@@ -122,6 +122,7 @@ exports.login = async (req, res) => {
         res.json({ message: error.message });
     }
 };
+
 
 exports.getUser = async(req, res) =>{
     try {

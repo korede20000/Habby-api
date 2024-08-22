@@ -13,7 +13,8 @@ const userSchema = new mongoose.Schema({
         city: String,
     }],
     role: {type: String, enum: ["admin", "client"], default: "client"},
-    status: { type: String, default: "pending" }
+    isVerified: { type: Boolean, default: false }, // New field
+    verificationToken: { type: String }, // New field
 
 })
 

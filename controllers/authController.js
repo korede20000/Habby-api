@@ -11,10 +11,10 @@ const validatePassword = (password) => {
 
 // Setup Nodemailer transporter (Gmail example, adjust accordingly)
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: 'outlook',
     auth: {
-        user: 'your-email@gmail.com',
-        pass: 'your-email-password'
+        user: process.env.EMAIL,
+        pass: process.env.PASSWORD
     }
 });
 
@@ -57,9 +57,9 @@ exports.register = async (req, res) => {
         const verificationToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         // Send verification email
-        const verificationLink = `http://yourdomain.com/verify-email?token=${verificationToken}`;
+        const verificationLink = `http://habby-api.onrender.com/verify-email?token=${verificationToken}`;
         const mailOptions = {
-            from: 'your-email@gmail.com',
+            from: process.env.EMAIL,
             to: email,
             subject: 'Email Verification',
             html: `<p>Click <a href="${verificationLink}">here</a> to verify your email and activate your account.</p>`

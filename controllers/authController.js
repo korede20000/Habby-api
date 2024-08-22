@@ -15,24 +15,20 @@ const validatePassword = (password) => {
 exports.register = async (req, res) => {
     const { firstName, lastName, email, phone, password, confirmPassword, addresses, role } = req.body;
 
-    // Check if passwords match
     if (password !== confirmPassword) {
-        return res.json("Passwords do not match");
+        return res.status(400).json("Passwords do not match");
     }
 
-    // Validate Password
     if (!validatePassword(password)) {
-        return res.json("Password must be at least 8 characters long and contain one number and one alphabet");
+        return res.status(400).json("Password must be at least 8 characters long and contain one number and one alphabet");
     }
 
     try {
-        // Check if user already exists
         let user = await User.findOne({ email });
         if (user) {
-            return res.json("User already exists");
+            return res.status(400).json("User already exists");
         }
 
-        // Create verification token
         const verificationToken = crypto.randomBytes(32).toString("hex");
 
         user = new User({
@@ -43,19 +39,19 @@ exports.register = async (req, res) => {
             password,
             addresses,
             role,
-            verificationToken
+            verificationToken,
+            isVerified: false // Make sure this is set to false initially
         });
 
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);
         await user.save();
 
-        // Send verification email
         const transporter = nodemailer.createTransport({
             service: 'outlook',
             auth: {
-                user: process.env.EMAIL_USER, // your email
-                pass: process.env.EMAIL_PASS // your email password
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
             }
         });
 
@@ -68,14 +64,22 @@ exports.register = async (req, res) => {
 
         transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
-                return res.json({ message: "Error sending verification email" });
+                console.error("Error sending verification email:", error);
+                return res.status(500).json({
+                    message: "Registration successful, but there was an error sending the verification email. Please try to log in and resend the verification email."
+                });
             }
-            res.json({ message: "Registration successful, please check your email for verification link" });
+
+            res.status(200).json({
+                message: "Registration successful, please check your email for the verification link."
+            });
         });
     } catch (error) {
-        res.json({ message: error.message });
+        console.error("Error during registration:", error);
+        res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
 
 // Email Verification
 exports.verifyEmail = async (req, res) => {

@@ -13,6 +13,8 @@ const userSchema = new mongoose.Schema({
         city: String,
     }],
     role: {type: String, enum: ["admin", "client"], default: "client"},
+    status: { type: String, default: "pending" }
+
 })
 
 userSchema.methods.generateAuthToken = function(){

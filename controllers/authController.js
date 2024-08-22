@@ -13,8 +13,8 @@ const validatePassword = (password) => {
 const transporter = nodemailer.createTransport({
     service: 'outlook',
     auth: {
-        user: process.env.EMAIL,
-        pass: process.env.PASSWORD
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
     }
 });
 
@@ -59,7 +59,7 @@ exports.register = async (req, res) => {
         // Send verification email
         const verificationLink = `http://habby-api.onrender.com/verify-email?token=${verificationToken}`;
         const mailOptions = {
-            from: process.env.EMAIL,
+            from: process.env.EMAIL_USER,
             to: email,
             subject: 'Email Verification',
             html: `<p>Click <a href="${verificationLink}">here</a> to verify your email and activate your account.</p>`

@@ -13,7 +13,11 @@ const validatePassword = (password) => {
 
 // Register with Email Verification
 exports.register = async (req, res) => {
-    const { firstName, lastName, email, phone, password, confirmPassword, addresses, role } = req.body;
+    const { firstName, lastName, email, phone, addresses, password, confirmPassword } = req.body;
+
+    if (!firstName || !lastName || !email || !phone || !addresses || !password || !confirmPassword) {
+        return res.status(400).json("All fields are required");
+    }
 
     if (password !== confirmPassword) {
         return res.status(400).json("Passwords do not match");
@@ -36,11 +40,10 @@ exports.register = async (req, res) => {
             lastName,
             email,
             phone,
+            addresses, // Ensure this is correctly structured in the backend
             password,
-            addresses,
-            role,
             verificationToken,
-            isVerified: false // Make sure this is set to false initially
+            isVerified: false
         });
 
         const salt = await bcrypt.genSalt(10);
@@ -59,7 +62,7 @@ exports.register = async (req, res) => {
             from: process.env.EMAIL_USER,
             to: user.email,
             subject: 'Verify your email address',
-            text: `Please verify your email by clicking the following link: http://habby-api.onrender.com/verify-email?token=${verificationToken}`
+            text: `Please verify your email by clicking the following link: ${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`
         };
 
         transporter.sendMail(mailOptions, (error, info) => {
@@ -85,21 +88,33 @@ exports.register = async (req, res) => {
 exports.verifyEmail = async (req, res) => {
     const { token } = req.query;
 
+    // Handle missing token
+    if (!token) {
+        return res.status(400).json("Token is required");
+    }
+
     try {
         const user = await User.findOne({ verificationToken: token });
+
+        // Handle invalid or expired token
         if (!user) {
-            return res.json("Invalid or expired token");
+            return res.status(400).json("Invalid or expired token");
         }
 
+        // Verify the user
         user.isVerified = true;
         user.verificationToken = undefined;
         await user.save();
 
-        res.json("Email verified successfully");
+        // Send success response
+        res.status(200).json("Email verified successfully");
     } catch (error) {
-        res.json({ message: error.message });
+        // Log the error and send a response
+        console.error("Error during email verification:", error);
+        res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
 
 
 // Login

@@ -62,7 +62,7 @@ exports.register = async (req, res) => {
             from: process.env.EMAIL_USER,
             to: user.email,
             subject: 'Verify your email address',
-            text: `Please verify your email by clicking the following link: ${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`
+            text: `Please verify your email by clicking the following link: http://habby-api.onrender.com/verify-email?token=${verificationToken}`
         };
 
         transporter.sendMail(mailOptions, (error, info) => {

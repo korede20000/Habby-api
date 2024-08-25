@@ -15,26 +15,32 @@ const validatePassword = (password) => {
 exports.register = async (req, res) => {
     const { firstName, lastName, email, phone, addresses, password, confirmPassword } = req.body;
 
+    // Ensure all fields are filled
     if (!firstName || !lastName || !email || !phone || !addresses || !password || !confirmPassword) {
-        return res.status(400).json("All fields are required");
+        return res.status(400).json({ message: "All fields are required" });
     }
 
+    // Check if passwords match
     if (password !== confirmPassword) {
-        return res.status(400).json("Passwords do not match");
+        return res.status(400).json({ message: "Passwords do not match" });
     }
 
+    // Validate password strength
     if (!validatePassword(password)) {
-        return res.status(400).json("Password must be at least 8 characters long and contain one number and one alphabet");
+        return res.status(400).json({ message: "Password must be at least 8 characters long and contain one number and one alphabet" });
     }
 
     try {
+        // Check if user already exists
         let user = await User.findOne({ email });
         if (user) {
-            return res.status(400).json("User already exists");
+            return res.status(400).json({ message: "User already exists" });
         }
 
+        // Generate a verification token
         const verificationToken = crypto.randomBytes(32).toString("hex");
 
+        // Create the new user
         user = new User({
             firstName,
             lastName,
@@ -46,10 +52,12 @@ exports.register = async (req, res) => {
             isVerified: false
         });
 
+        // Hash the password
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);
         await user.save();
 
+        // Set up the email transporter
         const transporter = nodemailer.createTransport({
             service: 'outlook',
             auth: {
@@ -58,6 +66,7 @@ exports.register = async (req, res) => {
             }
         });
 
+        // Define the email options
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: user.email,
@@ -65,6 +74,7 @@ exports.register = async (req, res) => {
             text: `Please verify your email by clicking the following link: http://habby-api.onrender.com/verify-email?token=${verificationToken}`
         };
 
+        // Send the verification email
         transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
                 console.error("Error sending verification email:", error);

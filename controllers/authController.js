@@ -59,15 +59,10 @@ exports.register = async (req, res) => {
 
         // Set up the email transporter
         const transporter = nodemailer.createTransport({
-            host: 'smtp-mail.outlook.com',
-            port: 587,
-            secure: false, // true for 465, false for other ports
+            service: 'outlook',
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
-            },
-            tls: {
-                ciphers: 'SSLv3'
             }
         });
 
@@ -129,6 +124,7 @@ exports.verifyEmail = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
 
 
 // Login

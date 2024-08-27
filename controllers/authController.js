@@ -13,117 +13,70 @@ const validatePassword = (password) => {
 
 // Register with Email Verification
 exports.register = async (req, res) => {
-    const {
-        firstName,
-        lastName,
-        email,
-        phone,
-        addresses,
-        password,
-        confirmPassword
-    } = req.body;
+    const { firstName, lastName, email, phone, password, confirmPassword, addresses, role } = req.body;
 
-    // Input Validation
-    if (
-        !firstName ||
-        !lastName ||
-        !email ||
-        !phone ||
-        !addresses ||
-        !password ||
-        !confirmPassword
-    ) {
-        return res.status(400).json({ message: "All fields are required." });
-    }
-
+    // Check if passwords match
     if (password !== confirmPassword) {
-        return res.status(400).json({ message: "Passwords do not match." });
+        return res.json("Passwords do not match");
     }
 
+    // Validate Password
     if (!validatePassword(password)) {
-        return res.status(400).json({
-            message:
-                "Password must be at least 8 characters long and contain at least one letter and one number."
-        });
+        return res.json("Password must be at least 8 characters long and contain one number and one alphabet");
     }
 
     try {
         // Check if user already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: "User already exists with this email." });
+        let user = await User.findOne({ email });
+        if (user) {
+            return res.json("User already exists");
         }
 
-        // Generate verification token
+        // Create verification token
         const verificationToken = crypto.randomBytes(32).toString("hex");
 
-        // Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        // Create new user
-        const newUser = new User({
+        user = new User({
             firstName,
             lastName,
             email,
             phone,
+            password,
             addresses,
-            password: hashedPassword,
+            role,
             verificationToken,
             isVerified: false
         });
 
-        await newUser.save();
-        console.log("New user registered:", newUser.email);
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
+        await user.save();
 
-        // Configure nodemailer transporter
+        // Send verification email
         const transporter = nodemailer.createTransport({
-            host: 'smtp-mail.outlook.com',
-            port: 587,
-            secure: false,
+            service: 'outlook',
             auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            },
-            tls: {
-                ciphers: 'SSLv3',
-                rejectUnauthorized: false
+                user: process.env.EMAIL_USER, // your email
+                pass: process.env.EMAIL_PASS // your email password
             }
         });
 
-        // Verify transporter configuration
-        await transporter.verify();
-        console.log("Email transporter verified successfully.");
-
-        // Email options
         const mailOptions = {
-            from: `"Habby" <${process.env.EMAIL_USER}>`,
-            to: newUser.email,
+            from: process.env.EMAIL,
+            to: user.email,
             subject: 'Verify your email address',
-            html: `
-                <h1>Email Verification</h1>
-                <p>Please verify your email by clicking the link below:</p>
-                <a href="http://habby-api.onrender.com/verify-email?token=${verificationToken}">Verify Email</a>
-                <p>If you did not request this, please ignore this email.</p>
-            `
+            text: `Please verify your email by clicking the following link: http://habby-api.onrender.com/verify-email?token=${verificationToken}`
         };
 
-        // Send verification email
-        await transporter.sendMail(mailOptions);
-        console.log("Verification email sent to:", newUser.email);
-
-        // Send success response
-        return res.status(201).json({
-            message: "Registration successful. Please check your email to verify your account."
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                return res.json({ message: "Error sending verification email" });
+            }
+            res.json({ message: "Registration successful, please check your email for verification link" });
         });
     } catch (error) {
-        console.error("Error during registration:", error);
-        return res.status(500).json({
-            message: "An error occurred during registration. Please try again later."
-        });
+        res.json({ message: error.message });
     }
 };
-
 
 // Email Verification
 exports.verifyEmail = async (req, res) => {

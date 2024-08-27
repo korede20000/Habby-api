@@ -2,7 +2,6 @@ const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-const validator = require('validator');
 const nodemailer = require("nodemailer"); // For sending emails
 
 // Password Validation Function
@@ -35,24 +34,6 @@ exports.register = async (req, res) => {
         !confirmPassword
     ) {
         return res.status(400).json({ message: "All fields are required." });
-    }
-
-    if (!validator.isEmail(email)) {
-        return res.status(400).json({ message: "Invalid email address." });
-    }
-
-    if (!validator.isMobilePhone(phone, 'any')) {
-        return res.status(400).json({ message: "Invalid phone number." });
-    }
-
-    if (!Array.isArray(addresses) || addresses.length === 0) {
-        return res.status(400).json({ message: "Addresses must be a non-empty array." });
-    }
-
-    for (let address of addresses) {
-        if (!address.street || !address.city) {
-            return res.status(400).json({ message: "Each address must include street and city." });
-        }
     }
 
     if (password !== confirmPassword) {

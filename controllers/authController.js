@@ -59,13 +59,18 @@ exports.register = async (req, res) => {
 
         // Set up the email transporter
         const transporter = nodemailer.createTransport({
-            service: 'Outlook',
+            host: 'smtp-mail.outlook.com',
+            port: 587,
+            secure: false, // true for 465, false for other ports
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
+            },
+            tls: {
+                ciphers: 'SSLv3'
             }
         });
-
+        
         // Define the email options
         const mailOptions = {
             from: process.env.EMAIL_USER,

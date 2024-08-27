@@ -70,7 +70,7 @@ exports.register = async (req, res) => {
                 ciphers: 'SSLv3'
             }
         });
-        
+
         // Define the email options
         const mailOptions = {
             from: process.env.EMAIL_USER,
@@ -129,7 +129,6 @@ exports.verifyEmail = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
-
 
 
 // Login

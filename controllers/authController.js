@@ -11,7 +11,16 @@ const validatePassword = (password) => {
 };
 
 
-// Register with Email Verification
+const validateEmail = (email) => {
+    const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@(([^<>()[\]\.,;:\s@"]+\.)+[^<>()[\]\.,;:\s@"]{2,})$/i;
+    return re.test(String(email).toLowerCase());
+};
+
+const validatePhone = (phone) => {
+    const re = /^\+?[1-9]\d{1,14}$/; // Example for international phone numbers
+    return re.test(String(phone));
+};
+
 exports.register = async (req, res) => {
     const {
         firstName,
@@ -24,16 +33,16 @@ exports.register = async (req, res) => {
     } = req.body;
 
     // Input Validation
-    if (
-        !firstName ||
-        !lastName ||
-        !email ||
-        !phone ||
-        !addresses ||
-        !password ||
-        !confirmPassword
-    ) {
+    if (!firstName || !lastName || !email || !phone || !addresses || !password || !confirmPassword) {
         return res.status(400).json({ message: "All fields are required." });
+    }
+
+    if (!validateEmail(email)) {
+        return res.status(400).json({ message: "Invalid email format." });
+    }
+
+    if (!validatePhone(phone)) {
+        return res.status(400).json({ message: "Invalid phone format." });
     }
 
     if (password !== confirmPassword) {
@@ -42,26 +51,21 @@ exports.register = async (req, res) => {
 
     if (!validatePassword(password)) {
         return res.status(400).json({
-            message:
-                "Password must be at least 8 characters long and contain at least one letter and one number."
+            message: "Password must be at least 8 characters long and contain at least one letter and one number."
         });
     }
 
     try {
-        // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: "User already exists with this email." });
         }
 
-        // Generate verification token
         const verificationToken = crypto.randomBytes(32).toString("hex");
 
-        // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Create new user
         const newUser = new User({
             firstName,
             lastName,
@@ -76,7 +80,6 @@ exports.register = async (req, res) => {
         await newUser.save();
         console.log("New user registered:", newUser.email);
 
-        // Configure nodemailer transporter
         const transporter = nodemailer.createTransport({
             host: 'smtp-mail.outlook.com',
             port: 587,
@@ -86,16 +89,14 @@ exports.register = async (req, res) => {
                 pass: process.env.EMAIL_PASS
             },
             tls: {
-                ciphers: 'SSLv3',
+                ciphers: 'TLSv1.2',
                 rejectUnauthorized: false
             }
         });
 
-        // Verify transporter configuration
         await transporter.verify();
         console.log("Email transporter verified successfully.");
 
-        // Email options
         const mailOptions = {
             from: `"Habby" <${process.env.EMAIL_USER}>`,
             to: newUser.email,
@@ -108,11 +109,9 @@ exports.register = async (req, res) => {
             `
         };
 
-        // Send verification email
         await transporter.sendMail(mailOptions);
         console.log("Verification email sent to:", newUser.email);
 
-        // Send success response
         return res.status(201).json({
             message: "Registration successful. Please check your email to verify your account."
         });

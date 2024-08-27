@@ -13,51 +13,81 @@ const validatePassword = (password) => {
 
 // Register with Email Verification
 exports.register = async (req, res) => {
-    const { firstName, lastName, email, phone, password, confirmPassword, addresses, role } = req.body;
+    const {
+        firstName,
+        lastName,
+        email,
+        phone,
+        addresses,
+        password,
+        confirmPassword
+    } = req.body;
 
-    // Check if passwords match
-    if (password !== confirmPassword) {
-        return res.json("Passwords do not match");
+    // Input Validation
+    if (
+        !firstName ||
+        !lastName ||
+        !email ||
+        !phone ||
+        !addresses ||
+        !password ||
+        !confirmPassword
+    ) {
+        return res.status(400).json({ message: "All fields are required." });
     }
 
-    // Validate Password
+    if (password !== confirmPassword) {
+        return res.status(400).json({ message: "Passwords do not match." });
+    }
+
     if (!validatePassword(password)) {
-        return res.json("Password must be at least 8 characters long and contain one number and one alphabet");
+        return res.status(400).json({
+            message:
+                "Password must be at least 8 characters long and contain at least one letter and one number."
+        });
     }
 
     try {
         // Check if user already exists
-        let user = await User.findOne({ email });
-        if (user) {
-            return res.json("User already exists");
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "User already exists with this email." });
         }
 
-        // Create verification token
+        // Generate verification token
         const verificationToken = crypto.randomBytes(32).toString("hex");
 
-        user = new User({
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Create new user
+        const newUser = new User({
             firstName,
             lastName,
             email,
             phone,
-            password,
             addresses,
-            role,
+            password: hashedPassword,
             verificationToken,
             isVerified: false
         });
 
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
         await newUser.save();
         console.log("New user registered:", newUser.email);
 
-        // Send verification email
+        // Configure nodemailer transporter
         const transporter = nodemailer.createTransport({
-            service: "outlook",
+            host: 'smtp-mail.outlook.com',
+            port: 587,
+            secure: false,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
+            },
+            tls: {
+                ciphers: 'SSLv3',
+                rejectUnauthorized: false
             }
         });
 
@@ -65,6 +95,7 @@ exports.register = async (req, res) => {
         await transporter.verify();
         console.log("Email transporter verified successfully.");
 
+        // Email options
         const mailOptions = {
             from: `"Habby" <${process.env.EMAIL_USER}>`,
             to: newUser.email,
@@ -77,16 +108,22 @@ exports.register = async (req, res) => {
             `
         };
 
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                return res.json({ message: "Error sending verification email" });
-            }
-            res.json({ message: "Registration successful, please check your email for verification link" });
+        // Send verification email
+        await transporter.sendMail(mailOptions);
+        console.log("Verification email sent to:", newUser.email);
+
+        // Send success response
+        return res.status(201).json({
+            message: "Registration successful. Please check your email to verify your account."
         });
     } catch (error) {
-        res.json({ message: error.message });
+        console.error("Error during registration:", error);
+        return res.status(500).json({
+            message: "An error occurred during registration. Please try again later."
+        });
     }
 };
+
 
 // Email Verification
 exports.verifyEmail = async (req, res) => {

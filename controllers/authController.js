@@ -53,18 +53,29 @@ exports.register = async (req, res) => {
 
         // Send verification email
         const transporter = nodemailer.createTransport({
-            service: 'outlook',
+            host: 'smtp-mail.outlook.com',
+            port: 587,
+            secure: false,
             auth: {
-                user: process.env.EMAIL_USER, // your email
-                pass: process.env.EMAIL_PASS // your email password
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            },
+            tls: {
+                ciphers: 'SSLv3',
+                rejectUnauthorized: false
             }
         });
 
         const mailOptions = {
-            from: process.env.EMAIL,
-            to: user.email,
+            from: `"Your App Name" <${process.env.EMAIL_USER}>`,
+            to: newUser.email,
             subject: 'Verify your email address',
-            text: `Please verify your email by clicking the following link: http://habby-api.onrender.com/verify-email?token=${verificationToken}`
+            html: `
+                <h1>Email Verification</h1>
+                <p>Please verify your email by clicking the link below:</p>
+                <a href="http://your-frontend-domain.com/verify-email?token=${verificationToken}">Verify Email</a>
+                <p>If you did not request this, please ignore this email.</p>
+            `
         };
 
         transporter.sendMail(mailOptions, (error, info) => {

@@ -2,6 +2,7 @@ const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
+const validator = require('validator');
 const nodemailer = require("nodemailer"); // For sending emails
 
 // Password Validation Function
@@ -13,83 +14,132 @@ const validatePassword = (password) => {
 
 // Register with Email Verification
 exports.register = async (req, res) => {
-    const { firstName, lastName, email, phone, addresses, password, confirmPassword } = req.body;
+    const {
+        firstName,
+        lastName,
+        email,
+        phone,
+        addresses,
+        password,
+        confirmPassword
+    } = req.body;
 
-    // Ensure all fields are filled
-    if (!firstName || !lastName || !email || !phone || !addresses || !password || !confirmPassword) {
-        return res.status(400).json({ message: "All fields are required" });
+    // Input Validation
+    if (
+        !firstName ||
+        !lastName ||
+        !email ||
+        !phone ||
+        !addresses ||
+        !password ||
+        !confirmPassword
+    ) {
+        return res.status(400).json({ message: "All fields are required." });
     }
 
-    // Check if passwords match
+    if (!validator.isEmail(email)) {
+        return res.status(400).json({ message: "Invalid email address." });
+    }
+
+    if (!validator.isMobilePhone(phone, 'any')) {
+        return res.status(400).json({ message: "Invalid phone number." });
+    }
+
+    if (!Array.isArray(addresses) || addresses.length === 0) {
+        return res.status(400).json({ message: "Addresses must be a non-empty array." });
+    }
+
+    for (let address of addresses) {
+        if (!address.street || !address.city) {
+            return res.status(400).json({ message: "Each address must include street and city." });
+        }
+    }
+
     if (password !== confirmPassword) {
-        return res.status(400).json({ message: "Passwords do not match" });
+        return res.status(400).json({ message: "Passwords do not match." });
     }
 
-    // Validate password strength
     if (!validatePassword(password)) {
-        return res.status(400).json({ message: "Password must be at least 8 characters long and contain one number and one alphabet" });
+        return res.status(400).json({
+            message:
+                "Password must be at least 8 characters long and contain at least one letter and one number."
+        });
     }
 
     try {
         // Check if user already exists
-        let user = await User.findOne({ email });
-        if (user) {
-            return res.status(400).json({ message: "User already exists" });
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "User already exists with this email." });
         }
 
-        // Generate a verification token
+        // Generate verification token
         const verificationToken = crypto.randomBytes(32).toString("hex");
 
-        // Create the new user
-        user = new User({
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Create new user
+        const newUser = new User({
             firstName,
             lastName,
             email,
             phone,
-            addresses, // Ensure this is correctly structured in the backend
-            password,
+            addresses,
+            password: hashedPassword,
             verificationToken,
             isVerified: false
         });
 
-        // Hash the password
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
-        await user.save();
+        await newUser.save();
+        console.log("New user registered:", newUser.email);
 
-        // Set up the email transporter
+        // Configure nodemailer transporter
         const transporter = nodemailer.createTransport({
-            service: 'outlook',
+            host: 'smtp-mail.outlook.com',
+            port: 587,
+            secure: false,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
+            },
+            tls: {
+                ciphers: 'SSLv3',
+                rejectUnauthorized: false
             }
         });
 
-        // Define the email options
+        // Verify transporter configuration
+        await transporter.verify();
+        console.log("Email transporter verified successfully.");
+
+        // Email options
         const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: user.email,
+            from: `"Habby" <${process.env.EMAIL_USER}>`,
+            to: newUser.email,
             subject: 'Verify your email address',
-            text: `Please verify your email by clicking the following link: http://habby-api.onrender.com/verify-email?token=${verificationToken}`
+            html: `
+                <h1>Email Verification</h1>
+                <p>Please verify your email by clicking the link below:</p>
+                <a href="http://habby-api.onrender.com/verify-email?token=${verificationToken}">Verify Email</a>
+                <p>If you did not request this, please ignore this email.</p>
+            `
         };
 
-        // Send the verification email
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.error("Error sending verification email:", error);
-                return res.status(500).json({
-                    message: "Registration successful, but there was an error sending the verification email. Please try to log in and resend the verification email."
-                });
-            }
+        // Send verification email
+        await transporter.sendMail(mailOptions);
+        console.log("Verification email sent to:", newUser.email);
 
-            res.status(200).json({
-                message: "Registration successful, please check your email for the verification link."
-            });
+        // Send success response
+        return res.status(201).json({
+            message: "Registration successful. Please check your email to verify your account."
         });
     } catch (error) {
         console.error("Error during registration:", error);
-        res.status(500).json({ message: "Internal Server Error" });
+        return res.status(500).json({
+            message: "An error occurred during registration. Please try again later."
+        });
     }
 };
 

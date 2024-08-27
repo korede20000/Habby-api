@@ -49,7 +49,8 @@ exports.register = async (req, res) => {
 
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);
-        await user.save();
+        await newUser.save();
+        console.log("New user registered:", newUser.email);
 
         // Send verification email
         const transporter = nodemailer.createTransport({
@@ -66,14 +67,18 @@ exports.register = async (req, res) => {
             }
         });
 
+        // Verify transporter configuration
+        await transporter.verify();
+        console.log("Email transporter verified successfully.");
+
         const mailOptions = {
-            from: `"Your App Name" <${process.env.EMAIL_USER}>`,
+            from: `"Habby" <${process.env.EMAIL_USER}>`,
             to: newUser.email,
             subject: 'Verify your email address',
             html: `
                 <h1>Email Verification</h1>
                 <p>Please verify your email by clicking the link below:</p>
-                <a href="http://your-frontend-domain.com/verify-email?token=${verificationToken}">Verify Email</a>
+                <a href="http://habby-api.onrender.com/verify-email?token=${verificationToken}">Verify Email</a>
                 <p>If you did not request this, please ignore this email.</p>
             `
         };

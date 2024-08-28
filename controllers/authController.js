@@ -20,10 +20,10 @@ const validateEmail = (email) => {
 exports.register = async (req, res) => {
     const {
         firstName,
-        lastName,
+        lastName = "",  // Default value if not provided
         email,
-        phone,
-        addresses,
+        phone = "",  // Default value if not provided
+        addresses = [],  // Default value if not provided
         password,
         confirmPassword
     } = req.body;
@@ -60,10 +60,10 @@ exports.register = async (req, res) => {
 
         const newUser = new User({
             firstName,
-            lastName: lastName || "",
+            lastName,
             email,
-            phone: phone || "",
-            addresses: addresses || [],
+            phone,
+            addresses,
             password: hashedPassword,
             verificationToken,
             isVerified: false
@@ -108,7 +108,6 @@ exports.register = async (req, res) => {
         });
     }
 };
-
 
 
 // Email Verification

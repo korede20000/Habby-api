@@ -16,10 +16,6 @@ const validateEmail = (email) => {
     return re.test(String(email).toLowerCase());
 };
 
-const validatePhone = (phone) => {
-    const re = /^\+?[1-9]\d{1,14}$/; // Example for international phone numbers
-    return re.test(String(phone));
-};
 
 exports.register = async (req, res) => {
     const {
@@ -81,10 +77,16 @@ exports.register = async (req, res) => {
         console.log("New user registered:", newUser.email);
 
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: 'smtp-mail.outlook.com',
+            port: 587,
+            secure: false,
             auth: {
-                user: process.env.EMAIL_USER, // your Gmail address
-                pass: process.env.EMAIL_PASS  // your Gmail password or app-specific password
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            },
+            tls: {
+                ciphers: 'TLSv1.2',
+                rejectUnauthorized: false
             }
         });
 

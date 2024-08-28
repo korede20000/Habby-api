@@ -37,10 +37,6 @@ exports.register = async (req, res) => {
         return res.status(400).json({ message: "Invalid email format." });
     }
 
-    if (!validatePhone(phone)) {
-        return res.status(400).json({ message: "Invalid phone format." });
-    }
-
     if (password !== confirmPassword) {
         return res.status(400).json({ message: "Passwords do not match." });
     }

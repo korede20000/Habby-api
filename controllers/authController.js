@@ -29,8 +29,8 @@ exports.register = async (req, res) => {
     } = req.body;
 
     // Input Validation
-    if (!firstName || !lastName || !email || !phone || !addresses || !password || !confirmPassword) {
-        return res.status(400).json({ message: "All fields are required." });
+    if (!firstName || !email || !password || !confirmPassword) {
+        return res.status(400).json({ message: "fill in the required fields"});
     }
 
     if (!validateEmail(email)) {

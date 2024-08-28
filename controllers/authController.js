@@ -149,24 +149,25 @@ exports.login = async (req, res) => {
     try {
         const user = await User.findOne({ email });
         if (!user) {
-            return res.json("Invalid Email/Password");
+            return res.status(400).json({ message: "Invalid Email/Password" });
         }
 
         if (!user.isVerified) {
-            return res.json("Please verify your email before logging in.");
+            return res.status(400).json({ message: "Please verify your email before logging in." });
         }
 
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
-            return res.json("Invalid Email/Password");
+            return res.status(400).json({ message: "Invalid Email/Password" });
         }
 
         const token = user.generateAuthToken();
-        res.json({ token });
+        return res.status(200).json({ token });
     } catch (error) {
-        res.json({ message: error.message });
+        return res.status(500).json({ message: error.message });
     }
 };
+
 
 
 exports.getUser = async(req, res) =>{

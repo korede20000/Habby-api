@@ -30,7 +30,7 @@ exports.register = async (req, res) => {
 
     // Input Validation
     if (!firstName || !email || !password || !confirmPassword) {
-        return res.status(400).json({ message: "fill in the required fields"});
+        return res.status(400).json({ message: "Fill in all required fields: First Name, Email, Password, Confirm Password." });
     }
 
     if (!validateEmail(email)) {
@@ -43,7 +43,7 @@ exports.register = async (req, res) => {
 
     if (!validatePassword(password)) {
         return res.status(400).json({
-            message: "Password must be at least 8 characters long and contain at least one letter and one number and a special character"
+            message: "Password must be at least 8 characters long and contain at least one letter, one number, and one special character."
         });
     }
 
@@ -60,10 +60,10 @@ exports.register = async (req, res) => {
 
         const newUser = new User({
             firstName,
-            lastName,
+            lastName: lastName || "",
             email,
-            phone,
-            addresses,
+            phone: phone || "",
+            addresses: addresses || [],
             password: hashedPassword,
             verificationToken,
             isVerified: false
@@ -108,6 +108,7 @@ exports.register = async (req, res) => {
         });
     }
 };
+
 
 
 // Email Verification

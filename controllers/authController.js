@@ -5,10 +5,10 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer"); // For sending emails
 
 // Password Validation Function
-const validatePassword = (password) => {
-    const pass = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
-    return pass.test(password);
-};
+function validatePassword(password) {
+    const regex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return regex.test(password);
+}
 
 
 const validateEmail = (email) => {
@@ -43,7 +43,7 @@ exports.register = async (req, res) => {
 
     if (!validatePassword(password)) {
         return res.status(400).json({
-            message: "Password must be at least 8 characters long and contain at least one letter and one number."
+            message: "Password must be at least 8 characters long and contain at least one letter and one number and a special character"
         });
     }
 

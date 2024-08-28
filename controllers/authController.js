@@ -114,31 +114,33 @@ exports.register = async (req, res) => {
 exports.verifyEmail = async (req, res) => {
     const { token } = req.query;
 
-    try {
-        if (!token) {
-            return res.status(400).json({ message: "Verification token is required." });
-        }
+    // Handle missing token
+    if (!token) {
+        return res.status(400).json("Token is required");
+    }
 
-        // Find the user with the matching verification token
+    try {
         const user = await User.findOne({ verificationToken: token });
 
+        // Handle invalid or expired token
         if (!user) {
-            return res.status(400).json({ message: "Invalid verification token." });
+            return res.status(400).json("Invalid or expired token");
         }
 
-        // Verify and update the user's status
+        // Verify the user
         user.isVerified = true;
-        user.verificationToken = undefined; // Clear the token
+        user.verificationToken = undefined;
         await user.save();
 
-        // Send a success response
-        return res.status(200).json({ message: "Email verified successfully." });
-
+        // Send success response
+        res.status(200).json("Email verified successfully");
     } catch (error) {
-        console.error("Error verifying email:", error);
-        return res.status(500).json({ message: "An error occurred during email verification. Please try again later." });
+        // Log the error and send a response
+        console.error("Error during email verification:", error);
+        res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
 
 
 // Login

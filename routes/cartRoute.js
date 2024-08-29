@@ -10,5 +10,6 @@ router.post("/addToCart", auth, cartController.addToCart)
 router.get("/cart", auth, cartController.getCart)
 router.post("/update-quantity", auth, cartController.updateQuantity)
 router.post("/delete-item", auth, cartController.removeItem)
+router.post("/sync-cart", auth, cartController.syncCart)
 
 module.exports = router

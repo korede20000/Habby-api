@@ -20,17 +20,17 @@ const validateEmail = (email) => {
 exports.register = async (req, res) => {
     const {
         firstName,
-        lastName = "",  // Default value if not provided
+        lastName = "",  // Optional field
         email,
-        phone = "",  // Default value if not provided
-        addresses = [],  // Default value if not provided
+        phone = "",  // Optional field
+        addresses = [],  // Optional field, set to an empty array if not provided
         password,
         confirmPassword
     } = req.body;
 
     // Input Validation
     if (!firstName || !email || !password || !confirmPassword) {
-        return res.status(400).json({ message: "Fill in all required fields: First Name, Email, Password, Confirm Password." });
+        return res.status(400).json({ message: "Please fill in the required fields." });
     }
 
     if (!validateEmail(email)) {

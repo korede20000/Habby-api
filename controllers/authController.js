@@ -23,7 +23,7 @@ exports.register = async (req, res) => {
         lastName = "",  // Optional field
         email,
         phone = "",  // Optional field
-        addresses = [],  // Optional field, set to an empty array if not provided
+        addresses = [],  // Optional field, default to empty array
         password,
         confirmPassword
     } = req.body;
@@ -60,10 +60,10 @@ exports.register = async (req, res) => {
 
         const newUser = new User({
             firstName,
-            lastName,
+            lastName,  // Will be an empty string if not provided
             email,
-            phone,
-            addresses,
+            phone,  // Will be an empty string if not provided
+            addresses,  // Will be an empty array if not provided
             password: hashedPassword,
             verificationToken,
             isVerified: false
@@ -108,7 +108,6 @@ exports.register = async (req, res) => {
         });
     }
 };
-
 
 // Email Verification
 exports.verifyEmail = async (req, res) => {
